@@ -1,5 +1,6 @@
 from distutils.core import setup
 
+
 setup(
     name='precision_rounding',
     version='0.1',
@@ -9,5 +10,6 @@ setup(
     license='BSD-3-Clause',
     author='Sławomir Marczyński',
     author_email='',
-    description='Rounds a measurement value and its uncertainty to a specified number of significant digits.'
+    description='Rounds a measurement value and its uncertainty '
+                'to a specified number of significant digits.'
 )
