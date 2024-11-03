@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='precision_rounding',
+    name='precise_rounding',
     version='0.1.1',
     packages=[''],
-    package_dir={'': 'precision_rounding'},
+    package_dir={'': 'precise_rounding'},
     url='https://github.com/slawomirmarczynski/precision_rounding',
     license='BSD-3-Clause',
     author='Sławomir Marczyński',
