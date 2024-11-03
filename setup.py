@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='precision_rounding',
-    version='0.1',
+    version='0.1.1',
     packages=[''],
     package_dir={'': 'precision_rounding'},
     url='https://github.com/slawomirmarczynski/precision_rounding',
