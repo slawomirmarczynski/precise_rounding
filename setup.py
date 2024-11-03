@@ -10,5 +10,7 @@ setup(
     author='Sławomir Marczyński',
     author_email='',
     description='Rounds a measurement value and its uncertainty '
-                'to a specified number of significant digits.'
+                'to a specified number of significant digits.',
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown'
 )
