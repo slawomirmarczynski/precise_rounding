@@ -5,7 +5,7 @@ setup(
     version='0.1.1',
     packages=[''],
     package_dir={'': 'precise_rounding'},
-    url='https://github.com/slawomirmarczynski/precision_rounding',
+    url='https://github.com/slawomirmarczynski/precise_rounding',
     license='BSD-3-Clause',
     author='Sławomir Marczyński',
     author_email='',
