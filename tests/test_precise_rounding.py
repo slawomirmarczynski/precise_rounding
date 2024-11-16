@@ -1,5 +1,6 @@
 import os
 import sys
+import unittest
 from unittest import TestCase
 
 sys.path.insert(0, os.path.abspath(
@@ -9,65 +10,73 @@ from precise_rounding import precise_rounding
 
 
 class Test(TestCase):
-    def test_precise_rounding_1(self):
-        result = precise_rounding(123.45678, 0.01234)
-        expected = ('123.457', '0.013')
+
+    def test_01(self):
+        """oczywiste użycie, domyślna ilość cyfr"""
+        supplied = 123.456789, 0.01269
+        expected = '123.457', '0.013'
+        result = precise_rounding(*supplied)
         self.assertEqual(expected, result)
 
-    def test_precise_rounding_2(self):
-        result = precise_rounding(123.45678, 0.01008)
-        expected = ('123.457', '0.010')
+    def test_02(self):
+        """oczywiste użycie, trzy parametry"""
+        supplied = 123.456789, 0.01269, 3
+        expected = '123.4568', '0.0127'
+        result = precise_rounding(*supplied)
         self.assertEqual(expected, result)
 
-    def test_precise_rounding_3(self):
-        result = precise_rounding(123.45678, 0.515)
-        expected = ('123.46', '0.52')
+    def test_03(self):
+        """zerowa niepewność, dwa parametry"""
+        supplied = 123.456789, 0
+        expected = '123.456789', '0'
+        result = precise_rounding(*supplied)
         self.assertEqual(expected, result)
 
-    def test_precise_rounding_4(self):
-        result = precise_rounding(123.45678, 5.123)
-        expected = ('123.5', '5.2')
+    def test_04(self):
+        """zerowa niepewność, trzy parametry"""
+        supplied = 123.456789, 0, 4
+        expected = '123.456789', '0'
+        result = precise_rounding(*supplied)
         self.assertEqual(expected, result)
 
-    def test_precise_rounding_5(self):
-        result = precise_rounding(123.45678, 55.123)
-        expected = ('123', '56')
-        self.assertEqual(expected, result)
+    def test_05(self):
+        """zaokrąglanie wartości"""
+        cases = (((123.001, 0.1), ('123.00', '0.10')),
+                 ((123.002, 0.1), ('123.00', '0.10')),
+                 ((123.003, 0.1), ('123.00', '0.10')),
+                 ((123.004, 0.1), ('123.00', '0.10')),
+                 ((123.005, 0.1), ('123.01', '0.10')),
+                 ((123.006, 0.1), ('123.01', '0.10')),
+                 ((123.007, 0.1), ('123.01', '0.10')),
+                 ((123.008, 0.1), ('123.01', '0.10')),
+                 ((123.009, 0.1), ('123.01', '0.10')),
+                 ((-123.002, 0.1), ('-123.00', '0.10')),
+                 ((-123.001, 0.1), ('-123.00', '0.10')),
+                 ((-123.003, 0.1), ('-123.00', '0.10')),
+                 ((-123.004, 0.1), ('-123.00', '0.10')),
+                 ((-123.005, 0.1), ('-123.01', '0.10')),
+                 ((-123.006, 0.1), ('-123.01', '0.10')),
+                 ((-123.007, 0.1), ('-123.01', '0.10')),
+                 ((-123.008, 0.1), ('-123.01', '0.10')),
+                 ((-123.009, 0.1), ('-123.01', '0.10')),)
 
-    def test_precise_rounding_6(self):
-        result = precise_rounding(453121123.456, 323451)
-        expected = ('453120000', '330000')
-        self.assertEqual(expected, result)
+        for supplied, expected in cases:
+            with self.subTest(supplied=supplied):
+                result = precise_rounding(*supplied)
+                self.assertEqual(expected, result)
 
-    def test_precise_rounding_7(self):
-        result = precise_rounding(123.456, 0)
-        expected = ('123.456', '0')
-        self.assertEqual(expected, result)
+    def test_exceptions(self):
+        """testowanie wyjątków"""
 
-    def test_precise_rounding_11(self):
-        with self.assertRaises(ValueError):
-            precise_rounding(1.0, -0.01)
+        cases = ((('abc', 0.01), TypeError), ((10.0, 'abc'), TypeError),
+                 ((1.0, 0.01, 'abc'), TypeError), ((1.0, -0.01), ValueError),
+                 ((1.0, 0.01, 0), ValueError), ((1.0, 0.01, -1), ValueError))
 
-    def test_precise_rounding_11(self):
-        with self.assertRaises(ValueError):
-            precise_rounding(1.0, -0.01)
+        for parameters, exception in cases:
+            with self.subTest(parameters=parameters):
+                with self.assertRaises(exception):
+                    precise_rounding(*parameters)
 
-    def test_precise_rounding_11(self):
-        with self.assertRaises(TypeError):
-            precise_rounding('abc', 0.01)
 
-    def test_precise_rounding_12(self):
-        with self.assertRaises(TypeError):
-            precise_rounding(10.0, 'abc')
-
-    def test_precise_rounding_13(self):
-        with self.assertRaises(TypeError):
-            precise_rounding(1.0, 0.01, 'abc')
-
-    def test_precise_rounding_14(self):
-        with self.assertRaises(ValueError):
-            precise_rounding(1.0, -0.01)
-
-    def test_precise_rounding_15(self):
-        with self.assertRaises(ValueError):
-            precise_rounding(1.0, 0.01, -1)
+if __name__ == '__main__':
+    unittest.main()
