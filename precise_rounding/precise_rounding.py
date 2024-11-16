@@ -91,25 +91,40 @@ def precise_rounding(value, uncertainty, uncertainty_digits=2):
         uncertainty_rounded_up = exponent * ceil(mantissa * factor) / factor
         uncertainty_rounded_down = exponent * floor(mantissa * factor) / factor
 
-        # Round value
-        #
-        value_rounded = exponent * round(value / exponent * factor) / factor
-
-        # Determine the final rounded uncertainty
+        # Determine the rounded uncertainty
         #
         if fabs(uncertainty_rounded_down - uncertainty) <= threshold:
-            uncertainty_rounded = uncertainty_rounded_down
+            uncertainty = uncertainty_rounded_down
         else:
-            uncertainty_rounded = uncertainty_rounded_up
+            uncertainty = uncertainty_rounded_up
+
+        # Normalize the mantissa to the range from 0.1 (inclusive)
+        # to 1.0 (exclusive).
+        #
+        if mantissa == 1.0:
+            characteristic += 1
+            exponent = 10 ** characteristic
+            mantissa = 0.1  # it would be necessary in future versions
+
+        # Round value, notice that round() function "round half to even",
+        # thus we use int() to proper "scientific" rounding.
+        #
+        # value_rounded = exponent * round(value / exponent * factor) / factor
+        #
+        ef = exponent / factor
+        if value >= 0:
+            value_rounded = ef * int(value / ef + 0.5)
+        else:
+            value_rounded = - ef * int(-value / ef + 0.5)
 
         # Format the rounded value and uncertainty as strings
         #
-        if uncertainty_rounded != int(uncertainty_rounded):
+        if uncertainty != int(uncertainty):
             n_digits = uncertainty_digits - characteristic
-            uncertainty_rounded_str = f"{uncertainty_rounded:.{n_digits}f}"
+            uncertainty_rounded_str = f"{uncertainty:.{n_digits}f}"
             value_rounded_str = f"{value_rounded:.{n_digits}f}"
         else:
-            uncertainty_rounded_str = f"{uncertainty_rounded:.0f}"
+            uncertainty_rounded_str = f"{uncertainty:.0f}"
             value_rounded_str = f"{value_rounded:.0f}"
             emitted_u_digits = len(uncertainty_rounded_str)
             if emitted_u_digits < uncertainty_digits:
