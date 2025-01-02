@@ -63,59 +63,68 @@ def precise_rounding(value, uncertainty, uncertainty_digits=2):
 
     if uncertainty != 0:
 
-        # Calculate the characteristic and mantissa of the uncertainty
+        # Why do we repeat the calculations twice? It might happen that
+        # after rounding the uncertainty, we get a number that has
+        # a different characteristic, greater by one, than the uncertainty
+        # before rounding. Therefore, we first recalculate everything for
+        # the original values and then again for the rounded data. There is
+        # no need to do this for the third time.
         #
-        mantissa = uncertainty
-        characteristic = 0
-        exponent = 1
+        for i in range(2):
 
-        # Adjust characteristic and mantissa for values >= 1.0
-        #
-        while mantissa >= 1.0:
-            characteristic += 1
-            exponent = 10 ** characteristic
-            mantissa = uncertainty / exponent
+            # Calculate the characteristic and mantissa of the uncertainty
+            #
+            mantissa = uncertainty
+            characteristic = 0
+            exponent = 1
 
-        # Adjust characteristic and mantissa for values < 0.1
-        #
-        while mantissa < 0.1:
-            characteristic -= 1
-            exponent = 10 ** characteristic
-            mantissa = uncertainty / exponent
+            # Adjust characteristic and mantissa for values >= 1.0
+            #
+            while mantissa >= 1.0:
+                characteristic += 1
+                exponent = 10 ** characteristic
+                mantissa = uncertainty / exponent
 
-        factor = 10 ** uncertainty_digits
-        threshold = 0.1 * exponent / factor
+            # Adjust characteristic and mantissa for values < 0.1
+            #
+            while mantissa < 0.1:
+                characteristic -= 1
+                exponent = 10 ** characteristic
+                mantissa = uncertainty / exponent
 
-        # Round uncertainty up and down
-        #
-        uncertainty_rounded_up = exponent * ceil(mantissa * factor) / factor
-        uncertainty_rounded_down = exponent * floor(mantissa * factor) / factor
+            factor = 10 ** uncertainty_digits
+            threshold = 0.1 * exponent / factor
 
-        # Determine the rounded uncertainty
-        #
-        if fabs(uncertainty_rounded_down - uncertainty) <= threshold:
-            uncertainty = uncertainty_rounded_down
-        else:
-            uncertainty = uncertainty_rounded_up
+            # Round uncertainty up and down
+            #
+            uncertainty_rounded_up = exponent * ceil(mantissa * factor) / factor
+            uncertainty_rounded_down = exponent * floor(mantissa * factor) / factor
 
-        # Normalize the mantissa to the range from 0.1 (inclusive)
-        # to 1.0 (exclusive).
-        #
-        if mantissa == 1.0:
-            characteristic += 1
-            exponent = 10 ** characteristic
-            mantissa = 0.1  # it would be necessary in future versions
+            # Normalize the mantissa to the range from 0.1 (inclusive)
+            # to 1.0 (exclusive).
+            #
+            if mantissa == 1.0:
+                characteristic += 1
+                exponent = 10 ** characteristic
+                mantissa = 0.1  # it would be necessary in future versions
 
-        # Round value, notice that round() function "round half to even",
-        # thus we use int() to proper "scientific" rounding.
-        #
-        # value_rounded = exponent * round(value / exponent * factor) / factor
-        #
-        ef = exponent / factor
-        if value >= 0:
-            value_rounded = ef * int(value / ef + 0.5)
-        else:
-            value_rounded = - ef * int(-value / ef + 0.5)
+            # Determine the rounded uncertainty
+            #
+            if fabs(uncertainty_rounded_down - uncertainty) <= threshold:
+                uncertainty = uncertainty_rounded_down
+            else:
+                uncertainty = uncertainty_rounded_up
+
+            # Round value, notice that round() function "round half to even",
+            # thus we use int() to proper "scientific" rounding.
+            #
+            # value_rounded = exponent * round(value / exponent * factor) / factor
+            #
+            ef = exponent / factor
+            if value >= 0:
+                value_rounded = ef * int(value / ef + 0.5)
+            else:
+                value_rounded = - ef * int(-value / ef + 0.5)
 
         # Format the rounded value and uncertainty as strings
         #
