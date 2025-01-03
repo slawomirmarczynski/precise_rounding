@@ -12,11 +12,16 @@ from precise_rounding import precise_rounding
 class Test(TestCase):
 
     def test_01(self):
-        """simple and obvious, default precision"""
-        supplied = 123.456789, 0.01269
-        expected = '123.457', '0.013'
-        result = precise_rounding(*supplied)
-        self.assertEqual(expected, result)
+        """Default automatic precision"""
+        cases = (((123.456789, 0.01269), ('123.457', '0.013')),
+                 ((123.456789, 0.02269), ('123.46', '0.03')),
+                 ((123.456789, 0.05269), ('123.46', '0.06')),
+                 ((123.456789, 0.09999), ('123.46', '0.10')),)
+
+        for supplied, expected in cases:
+            with self.subTest(supplied=supplied):
+                result = precise_rounding(*supplied)
+                self.assertEqual(expected, result)
 
     def test_02(self):
         """simple and obvious, third parameter"""

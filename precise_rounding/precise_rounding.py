@@ -1,7 +1,7 @@
 from math import ceil, fabs, floor
 
 
-def precise_rounding(value, uncertainty, uncertainty_digits=2):
+def precise_rounding(value, uncertainty, uncertainty_digits='auto'):
     """
     Rounds a measurement value and its uncertainty to a specified number
     of significant digits.
@@ -10,7 +10,8 @@ def precise_rounding(value, uncertainty, uncertainty_digits=2):
         value (float): The measurement value.
         uncertainty (float): The uncertainty of the measurement.
         uncertainty_digits (int, optional): The number of significant
-            digits for the uncertainty. Defaults to 2.
+            digits for the uncertainty. Defaults to 'auto', which give
+            two (when leading digit is 1) or one significient digits.
 
     Returns:
         tuple: A tuple containing the rounded value and the rounded
@@ -23,21 +24,20 @@ def precise_rounding(value, uncertainty, uncertainty_digits=2):
 
     Examples:
 
-        >>> precise_rounding(123.45678, 0.01234)
-        ('123.457', '0.013')
+        >>> precise_rounding(123.45678, 0.0215)
+        ('123.46', '0.03')
 
         >>> precise_rounding(123.45678, 0.01009)
         ('123.457', '0.010')
 
-        >>> precise_rounding(123.45678, 0.515, 1)
-        ('123.5', '0.6')
+        >>> precise_rounding(123.4545, 0.07234, 2)
+        ('123.455', '0.073')
 
-        >>> precise_rounding(123.45678, 5.123)
-        ('123.5', '5.2')
-
-        >>> precise_rounding(123.456, 0)
-        ('123.456', '0')
     """
+
+    auto_uncertainty_digits = (uncertainty_digits == 'auto')
+    if auto_uncertainty_digits:
+        uncertainty_digits = 2  # will be updated later to either 1 or 2
 
     # Ensure the inputs can be converted to numbers
     #
@@ -67,10 +67,9 @@ def precise_rounding(value, uncertainty, uncertainty_digits=2):
         # after rounding the uncertainty, we get a number that has
         # a different characteristic, greater by one, than the uncertainty
         # before rounding. Therefore, we first recalculate everything for
-        # the original values and then again for the rounded data. There is
-        # no need to do this for the third time.
+        # the original values and then again for the rounded data.
         #
-        for i in range(2):
+        for i in range(3):
 
             # Calculate the characteristic and mantissa of the uncertainty
             #
@@ -114,6 +113,9 @@ def precise_rounding(value, uncertainty, uncertainty_digits=2):
                 uncertainty = uncertainty_rounded_down
             else:
                 uncertainty = uncertainty_rounded_up
+
+            if auto_uncertainty_digits:
+                uncertainty_digits = 1 if int(mantissa * 10) != 1 else 2
 
             # Round value, notice that round() function "round half to even",
             # thus we use int() to proper "scientific" rounding.
