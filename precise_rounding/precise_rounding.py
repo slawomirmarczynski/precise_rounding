@@ -63,13 +63,14 @@ def precise_rounding(value, uncertainty, uncertainty_digits='auto'):
 
     if uncertainty != 0:
 
-        # Why do we repeat the calculations twice? It might happen that
+        # Why do we repeat the calculations thrice? It might happen that
         # after rounding the uncertainty, we get a number that has
         # a different characteristic, greater by one, than the uncertainty
         # before rounding. Therefore, we first recalculate everything for
         # the original values and then again for the rounded data.
+        # The third pass is needed when automatic choice of digits is active.
         #
-        for i in range(3):
+        for i in range(3 if auto_uncertainty_digits else 2):
 
             # Calculate the characteristic and mantissa of the uncertainty
             #
