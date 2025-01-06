@@ -118,16 +118,16 @@ def precise_rounding(value, uncertainty, uncertainty_digits='auto'):
             if auto_uncertainty_digits:
                 uncertainty_digits = 1 if int(mantissa * 10) != 1 else 2
 
-            # Round value, notice that round() function "round half to even",
-            # thus we use int() to proper "scientific" rounding.
-            #
-            # value_rounded = exponent * round(value / exponent * factor) / factor
-            #
-            ef = exponent / factor
-            if value >= 0:
-                value_rounded = ef * int(value / ef + 0.5)
-            else:
-                value_rounded = - ef * int(-value / ef + 0.5)
+        # Round value, notice that round() function "round half to even",
+        # thus we use int() to proper "scientific" rounding.
+        #
+        # value_rounded = exponent * round(value / exponent * factor) / factor
+        #
+        ef = exponent / factor
+        if value >= 0:
+            value_rounded = ef * int(value / ef + 0.5)
+        else:
+            value_rounded = - ef * int(-value / ef + 0.5)
 
         # Format the rounded value and uncertainty as strings
         #
