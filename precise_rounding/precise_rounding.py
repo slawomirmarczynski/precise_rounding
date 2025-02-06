@@ -151,8 +151,13 @@ def precise_rounding(value, uncertainty, uncertainty_digits='auto'):
         # uncertainty_rounded = uncertainty
         uncertainty_rounded_str = "0"
         value_rounded = value
-        value_rounded_str = f"{value_rounded:f}"
+        value_rounded_str = str(value_rounded)
         if "." in value_rounded_str:
             value_rounded_str = value_rounded_str.rstrip("0").rstrip(".")
+            if "." in value_rounded_str:
+                length = len(value_rounded_str)
+                position = value_rounded_str.index('.')
+                number_frac_digits = length - position - 1
+                uncertainty_rounded_str = "0." + "0" * number_frac_digits
 
     return value_rounded_str, uncertainty_rounded_str

@@ -32,7 +32,7 @@ class Test(TestCase):
 
     def test_03(self):
         """zero uncertainty, default precision"""
-        cases = (((123.456789, 0), ('123.456789', '0')),
+        cases = (((123.456789, 0), ('123.456789', '0.000000')),
                  ((123.000000, 0), ('123', '0')),
                  ((12300.0000, 0), ('12300', '0')),)
         for supplied, expected in cases:
@@ -43,7 +43,7 @@ class Test(TestCase):
     def test_04(self):
         """zero uncertainty, custom precision"""
         supplied = 123.456789, 0, 4
-        expected = '123.456789', '0'
+        expected = '123.456789', '0.000000'
         result = precise_rounding(*supplied)
         self.assertEqual(expected, result)
 
