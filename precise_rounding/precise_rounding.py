@@ -63,13 +63,14 @@ def precise_rounding(value, uncertainty, uncertainty_digits='auto'):
 
     if uncertainty != 0:
 
-        # Why do we repeat the calculations twice? It might happen that
+        # Why do we repeat the calculations thrice? It might happen that
         # after rounding the uncertainty, we get a number that has
         # a different characteristic, greater by one, than the uncertainty
         # before rounding. Therefore, we first recalculate everything for
         # the original values and then again for the rounded data.
+        # The third pass is needed when automatic choice of digits is active.
         #
-        for i in range(3):
+        for i in range(3 if auto_uncertainty_digits else 2):
 
             # Calculate the characteristic and mantissa of the uncertainty
             #
@@ -117,16 +118,16 @@ def precise_rounding(value, uncertainty, uncertainty_digits='auto'):
             if auto_uncertainty_digits:
                 uncertainty_digits = 1 if int(mantissa * 10) != 1 else 2
 
-            # Round value, notice that round() function "round half to even",
-            # thus we use int() to proper "scientific" rounding.
-            #
-            # value_rounded = exponent * round(value / exponent * factor) / factor
-            #
-            ef = exponent / factor
-            if value >= 0:
-                value_rounded = ef * int(value / ef + 0.5)
-            else:
-                value_rounded = - ef * int(-value / ef + 0.5)
+        # Round value, notice that round() function "round half to even",
+        # thus we use int() to proper "scientific" rounding.
+        #
+        # value_rounded = exponent * round(value / exponent * factor) / factor
+        #
+        ef = exponent / factor
+        if value >= 0:
+            value_rounded = ef * int(value / ef + 0.5)
+        else:
+            value_rounded = - ef * int(-value / ef + 0.5)
 
         # Format the rounded value and uncertainty as strings
         #
@@ -150,8 +151,13 @@ def precise_rounding(value, uncertainty, uncertainty_digits='auto'):
         # uncertainty_rounded = uncertainty
         uncertainty_rounded_str = "0"
         value_rounded = value
-        value_rounded_str = f"{value_rounded:f}"
+        value_rounded_str = str(value_rounded)
         if "." in value_rounded_str:
             value_rounded_str = value_rounded_str.rstrip("0").rstrip(".")
+            if "." in value_rounded_str:
+                length = len(value_rounded_str)
+                position = value_rounded_str.index('.')
+                number_frac_digits = length - position - 1
+                uncertainty_rounded_str = "0." + "0" * number_frac_digits
 
     return value_rounded_str, uncertainty_rounded_str
