@@ -1,6 +1,11 @@
+import os
+import sys
 import unittest
 
-from precise_rounding.precise_rounding import PreciseRounding
+sys.path.insert(0, os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../precise_rounding')))
+
+from precise_rounding import PreciseRounding  # noqa
 
 
 class TestPreciseRounding(unittest.TestCase):
