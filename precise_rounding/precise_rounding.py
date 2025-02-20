@@ -10,8 +10,8 @@ def precise_rounding(value, uncertainty, uncertainty_digits='auto'):
         value (float): The measurement value.
         uncertainty (float): The uncertainty of the measurement.
         uncertainty_digits (int, optional): The number of significant
-            digits for the uncertainty. Defaults to 'auto', which give
-            two (when leading digit is 1) or one significient digits.
+            digits for the uncertainty. Defaults to 'auto', which gives
+            two (when leading digit is 1) or one significant digit.
 
     Returns:
         tuple: A tuple containing the rounded value and the rounded
@@ -23,7 +23,6 @@ def precise_rounding(value, uncertainty, uncertainty_digits='auto'):
         TypeError: If value or uncertainty cannot be converted to float.
 
     Examples:
-
         >>> precise_rounding(123.45678, 0.0215)
         ('123.46', '0.03')
 
@@ -33,131 +32,270 @@ def precise_rounding(value, uncertainty, uncertainty_digits='auto'):
         >>> precise_rounding(123.4545, 0.07234, 2)
         ('123.455', '0.073')
 
+        >>> precise_rounding(123.4545, 0, 2)
+        ('123.4545', '0.0000')
+    """
+    measurement = PreciseRounding(value, uncertainty)
+    if uncertainty_digits != 'auto':
+        measurement.uncertainty_digits = uncertainty_digits
+    return measurement.value, measurement.uncertainty
+
+
+class PreciseRounding:
+    """
+    A class to handle precise rounding of a measurement value and its
+    uncertainty.
+
+    Attributes:
+        _value (float): The measurement value.
+        _uncertainty (float): The uncertainty of the measurement.
+        _uncertainty_digits (int): The number of significant digits for
+            the uncertainty.
+        _auto_uncertainty_digits (bool): Flag to determine if uncertainty
+            digits are set automatically.
+        _value_rounded_str (str): The rounded measurement value as a
+            string.
+        _uncertainty_rounded_str (str): The rounded uncertainty as a
+            string.
     """
 
-    auto_uncertainty_digits = (uncertainty_digits == 'auto')
-    if auto_uncertainty_digits:
-        uncertainty_digits = 2  # will be updated later to either 1 or 2
+    def __init__(self, value, uncertainty):
+        """
+        Initializes the PreciseRounding class with the given value and
+        uncertainty.
 
-    # Ensure the inputs can be converted to numbers
-    #
-    try:
-        value = float(value)
-    except ValueError:
-        raise TypeError("value must be a number")
-    try:
-        value = float(value)
-    except ValueError:
-        raise TypeError("uncertainty must be a number")
-    try:
-        uncertainty_digits = int(uncertainty_digits)
-    except ValueError:
-        raise TypeError("uncertainty_digits must be a number")
+        Args:
+            value (float): The measurement value.
+            uncertainty (float): The uncertainty of the measurement.
+        """
+        self._value = value
+        self._uncertainty = uncertainty
+        self._uncertainty_digits = 2  # provisional
+        self._auto_uncertainty_digits = True
+        self._value_rounded_str = None
+        self._uncertainty_rounded_str = None
+        self._compute()
 
-    # Ensure the uncertainty and uncertainty_digits are valid
-    #
-    if uncertainty < 0:
-        raise ValueError("uncertainty must be non-negative")
-    if uncertainty_digits < 1:
-        raise ValueError("uncertainty_digits must be at least 1")
+    def __str__(self):
+        """
+        Returns a string representation of the rounded value and
+        uncertainty.
 
-    if uncertainty != 0:
+        Returns:
+            str: The rounded value and uncertainty in the format
+                'value±uncertainty'.
+        """
+        return self.value + '±' + self.uncertainty
 
-        # Why do we repeat the calculations thrice? It might happen that
-        # after rounding the uncertainty, we get a number that has
-        # a different characteristic, greater by one, than the uncertainty
-        # before rounding. Therefore, we first recalculate everything for
-        # the original values and then again for the rounded data.
-        # The third pass is needed when automatic choice of digits is active.
+    @property
+    def uncertainty_digits(self):
+        """
+        Gets the number of significant digits for the uncertainty.
+
+        Returns:
+            int: The number of significant digits for the uncertainty.
+        """
+        return self._uncertainty_digits
+
+    @uncertainty_digits.setter
+    def uncertainty_digits(self, uncertainty_digits):
+        """
+        Sets the number of significant digits for the uncertainty.
+
+        Args:
+            uncertainty_digits (int or str): The number of significant
+                digits for the uncertainty. If set to 'auto', the number
+                of digits is determined automatically.
+        """
+        if uncertainty_digits == 'auto':
+            self._auto_uncertainty_digits = True
+            self._uncertainty_digits = 2
+        else:
+            self._auto_uncertainty_digits = False
+            self._uncertainty_digits = uncertainty_digits
+        self._compute()
+
+    @property
+    def value(self):
+        """
+        Gets the rounded measurement value as a string.
+
+        Returns:
+            str: The rounded measurement value.
+        """
+        return self._value_rounded_str
+
+    @property
+    def uncertainty(self):
+        """
+        Gets the rounded uncertainty as a string.
+
+        Returns:
+            str: The rounded uncertainty.
+        """
+        return self._uncertainty_rounded_str
+
+    def is_exact(self):
+        """
+        Checks if the uncertainty is zero.
+
+        Returns:
+            bool: True if the uncertainty is zero, False otherwise.
+        """
+        return self._uncertainty == 0
+
+    @property
+    def relative_uncertainty(self):
+        """
+        Calculates the relative uncertainty.
+
+        Returns:
+            float: The relative uncertainty.
+        """
+        if self._value == 0 and self._uncertainty == 0:
+            relative = float('nan')
+        elif self._value == 0:
+            relative = float('inf')
+        else:
+            relative = abs(self._uncertainty) / abs(self._value)
+            # TODO: rounding to 2 significant digits
+        return relative
+
+    def _compute(self):
+        """
+        Rounds a measurement value and its uncertainty to a specified
+        number of significant digits.
+        """
+        # Ensure the inputs can be converted to numbers
         #
-        for i in range(3 if auto_uncertainty_digits else 2):
+        try:
+            self._value = float(self._value)
+        except ValueError:
+            raise TypeError("value must be a number")
+        try:
+            self._uncertainty = float(self._uncertainty)
+        except ValueError:
+            raise TypeError("uncertainty must be a number")
+        try:
+            self._uncertainty_digits = int(self._uncertainty_digits)
+        except ValueError:
+            raise TypeError("uncertainty_digits must be a number")
 
-            # Calculate the characteristic and mantissa of the uncertainty
+        # Ensure the uncertainty and uncertainty_digits are valid
+        #
+        if self._uncertainty < 0:
+            raise ValueError("uncertainty must be non-negative")
+        if self._uncertainty_digits != 'auto' and self._uncertainty_digits < 1:
+            raise ValueError("uncertainty_digits must be at least 1 or 'auto'")
+
+        # Handle NaN
+        #
+        if self._value != self._value:  # is NaN
+            raise ValueError("value is not-a-number (NaN)")
+        if self._uncertainty != self._uncertainty:  # is NaN
+            raise ValueError("uncertainty is not-a-number (NaN)")
+
+        if self._uncertainty != 0:            
+            # Repeat the calculations thrice to handle rounding edge cases
             #
-            mantissa = uncertainty
-            characteristic = 0
-            exponent = 1
+            uncertainty = self._uncertainty
+            uncertainty_digits = self._uncertainty_digits
+            for i in range(3 if self._auto_uncertainty_digits else 2):
+                significand, characteristic, exponential = (
+                    self._decompose(uncertainty))
+                factor = 10 ** (uncertainty_digits - 1)
+                threshold = 0.1 * exponential / factor
 
-            # Adjust characteristic and mantissa for values >= 1.0
+                # Round uncertainty up and down
+                uncertainty_rounded_up = (
+                    exponential * ceil(significand * factor) / factor)
+                uncertainty_rounded_down = (
+                    exponential * floor(significand * factor) / factor)
+
+                # Determine the rounded uncertainty
+                #
+                if fabs(uncertainty_rounded_down - uncertainty) <= threshold:
+                    uncertainty = uncertainty_rounded_down
+                else:
+                    uncertainty = uncertainty_rounded_up
+
+                if self._auto_uncertainty_digits:
+                    # Automatically choose the number of significant digits
+                    uncertainty_digits = 1 if int(significand) != 1 else 2
+
+            # Round value using scientific rounding
             #
-            while mantissa >= 1.0:
-                characteristic += 1
-                exponent = 10 ** characteristic
-                mantissa = uncertainty / exponent
-
-            # Adjust characteristic and mantissa for values < 0.1
-            #
-            while mantissa < 0.1:
-                characteristic -= 1
-                exponent = 10 ** characteristic
-                mantissa = uncertainty / exponent
-
-            factor = 10 ** uncertainty_digits
-            threshold = 0.1 * exponent / factor
-
-            # Round uncertainty up and down
-            #
-            uncertainty_rounded_up = exponent * ceil(mantissa * factor) / factor
-            uncertainty_rounded_down = exponent * floor(mantissa * factor) / factor
-
-            # Normalize the mantissa to the range from 0.1 (inclusive)
-            # to 1.0 (exclusive).
-            #
-            if mantissa == 1.0:
-                characteristic += 1
-                exponent = 10 ** characteristic
-                mantissa = 0.1  # it would be necessary in future versions
-
-            # Determine the rounded uncertainty
-            #
-            if fabs(uncertainty_rounded_down - uncertainty) <= threshold:
-                uncertainty = uncertainty_rounded_down
+            ef = exponential / factor  # noqa
+            if self._value >= 0:
+                value_rounded = ef * int(self._value / ef + 0.5)
             else:
-                uncertainty = uncertainty_rounded_up
+                value_rounded = - ef * int(-self._value / ef + 0.5)
 
-            if auto_uncertainty_digits:
-                uncertainty_digits = 1 if int(mantissa * 10) != 1 else 2
-
-        # Round value, notice that round() function "round half to even",
-        # thus we use int() to proper "scientific" rounding.
-        #
-        # value_rounded = exponent * round(value / exponent * factor) / factor
-        #
-        ef = exponent / factor
-        if value >= 0:
-            value_rounded = ef * int(value / ef + 0.5)
+            # Format the rounded value and uncertainty as strings
+            #
+            if uncertainty != int(uncertainty):
+                n_digits = uncertainty_digits - characteristic - 1  # noqa
+                self._uncertainty_rounded_str = (
+                    f"{uncertainty:.{n_digits}f}")
+                self._value_rounded_str = f"{value_rounded:.{n_digits}f}"
+            else:
+                self._uncertainty_rounded_str = f"{uncertainty:.0f}"
+                self._value_rounded_str = f"{value_rounded:.0f}"
+                emitted_u_digits = len(self._uncertainty_rounded_str)
+                if emitted_u_digits < uncertainty_digits:
+                    padding = "." + "0" * (
+                        uncertainty_digits - emitted_u_digits)
+                    self._uncertainty_rounded_str += padding
+                    self._value_rounded_str += padding
         else:
-            value_rounded = - ef * int(-value / ef + 0.5)
+            # Handle the case where uncertainty is zero.
+            #
+            assert self._uncertainty == 0
 
-        # Format the rounded value and uncertainty as strings
-        #
-        if uncertainty != int(uncertainty):
-            n_digits = uncertainty_digits - characteristic
-            uncertainty_rounded_str = f"{uncertainty:.{n_digits}f}"
-            value_rounded_str = f"{value_rounded:.{n_digits}f}"
-        else:
-            uncertainty_rounded_str = f"{uncertainty:.0f}"
-            value_rounded_str = f"{value_rounded:.0f}"
-            emitted_u_digits = len(uncertainty_rounded_str)
-            if emitted_u_digits < uncertainty_digits:
-                padding = "." + "0" * (uncertainty_digits - emitted_u_digits)
-                uncertainty_rounded_str += padding
-                value_rounded_str += padding
-
-    else:
-        # Handle the case where uncertainty is zero
-        assert uncertainty == 0
-
-        # uncertainty_rounded = uncertainty
-        uncertainty_rounded_str = "0"
-        value_rounded = value
-        value_rounded_str = str(value_rounded)
-        if "." in value_rounded_str:
-            value_rounded_str = value_rounded_str.rstrip("0").rstrip(".")
-            if "." in value_rounded_str:
-                length = len(value_rounded_str)
-                position = value_rounded_str.index('.')
+            self._value_rounded_str = str(self._value)
+            self._uncertainty_rounded_str = "0"
+            if "." in self._value_rounded_str:
+                self._value_rounded_str = (self._value_rounded_str.
+                                           rstrip("0").rstrip("."))
+            if "." in self._value_rounded_str:
+                length = len(self._value_rounded_str)
+                position = self._value_rounded_str.index('.')
                 number_frac_digits = length - position - 1
-                uncertainty_rounded_str = "0." + "0" * number_frac_digits
+                self._uncertainty_rounded_str = (
+                    "0." + "0" * number_frac_digits)
 
-    return value_rounded_str, uncertainty_rounded_str
+    @staticmethod
+    def _decompose(value):
+        """
+        Decomposes a floating point value into its characteristic,
+        significand, and exponent.
+
+        This method calculates the characteristic, significand,
+        and exponent of a given floating point value.
+        The characteristic is adjusted to ensure the significand
+        is within the range [0.1, 1.0).
+
+        Args:
+            value (float): Floating point value to decompose.
+
+        Returns:
+            tuple: A tuple containing the characteristic (int),
+                significand (float), and exponent (float).
+        """
+        significand = value
+        characteristic = 0
+        exponent = 1
+
+        # Adjust characteristic and significand for values < 1.0
+        while significand < 1.0:
+            characteristic -= 1
+            exponent = 10 ** characteristic
+            significand = value / exponent
+
+        # Adjust characteristic and significand for values >= 10.0
+        while significand >= 10.0:
+            characteristic += 1
+            exponent = 10 ** characteristic
+            significand = value / exponent
+
+        return significand, characteristic, exponent
