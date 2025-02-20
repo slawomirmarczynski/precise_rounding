@@ -213,6 +213,7 @@ class PreciseRounding:
                     exponential * floor(significand * factor) / factor)
 
                 # Determine the rounded uncertainty
+                #
                 if fabs(uncertainty_rounded_down - uncertainty) <= threshold:
                     uncertainty = uncertainty_rounded_down
                 else:
@@ -223,15 +224,17 @@ class PreciseRounding:
                     uncertainty_digits = 1 if int(significand) != 1 else 2
 
             # Round value using scientific rounding
-            ef = exponential / factor
+            #
+            ef = exponential / factor  # noqa
             if self._value >= 0:
                 value_rounded = ef * int(self._value / ef + 0.5)
             else:
                 value_rounded = - ef * int(-self._value / ef + 0.5)
 
             # Format the rounded value and uncertainty as strings
+            #
             if uncertainty != int(uncertainty):
-                n_digits = uncertainty_digits - characteristic - 1
+                n_digits = uncertainty_digits - characteristic - 1  # noqa
                 self._uncertainty_rounded_str = (
                     f"{uncertainty:.{n_digits}f}")
                 self._value_rounded_str = f"{value_rounded:.{n_digits}f}"
@@ -246,7 +249,9 @@ class PreciseRounding:
                     self._value_rounded_str += padding
         else:
             # Handle the case where uncertainty is zero.
+            #
             assert self._uncertainty == 0
+
             self._value_rounded_str = str(self._value)
             self._uncertainty_rounded_str = "0"
             if "." in self._value_rounded_str:
