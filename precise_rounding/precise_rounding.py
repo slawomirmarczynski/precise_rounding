@@ -145,7 +145,7 @@ class PreciseRounding:
         return self._uncertainty == 0
 
     @property
-    def relative_uncertainty(self):
+    def relative_uncertainty(self, digits=2):
         """
         Calculates the relative uncertainty.
 
@@ -153,13 +153,20 @@ class PreciseRounding:
             float: The relative uncertainty.
         """
         if self._value == 0 and self._uncertainty == 0:
-            relative = float('nan')
+            relative_str = 'nan'
         elif self._value == 0:
-            relative = float('inf')
+            relative_str = 'inf'
         else:
-            relative = abs(self._uncertainty) / abs(self._value)
-            # TODO: rounding to 2 significant digits
-        return relative
+            relative = abs(self._uncertainty) / abs(self._value) * 100.0
+            significand, characteristic, exponent = self._decompose(relative)
+            factor = 10**(digits - 1)
+            significand = int(factor * significand) / factor  # we are sure that significand >= 0
+            relative = significand * exponent
+            if relative >= 10**digits:
+                relative_str = int(relative)
+            else:
+                relative_str = f"{relative:.{digits - 1 - characteristic}f}%"
+        return relative_str
 
     def _compute(self):
         """
