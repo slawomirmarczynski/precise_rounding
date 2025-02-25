@@ -3,8 +3,6 @@ import sys
 import unittest
 from unittest import TestCase
 
-sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../precise_rounding')))
 
 from precise_rounding import precise_rounding
 
