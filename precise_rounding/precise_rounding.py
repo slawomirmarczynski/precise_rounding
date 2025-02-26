@@ -310,22 +310,42 @@ class PreciseRounding:
 
     @staticmethod
     def _float_to_decimal_string(value):
-        try:
-            value = float(value)
-        except:
-            raise ValueError("value must be a number")
+        """
+        Converts a float to a decimal string without using exponential notation.
 
-        result = "0"
-        if value != 0.0:
-            result = f"{value:.14e}"
-            part1, part2 = result.split('e')
-            decimal_part = part1.replace('.', '').rstrip('0')
-            exponent = int(part2)
-            if exponent > 0:
-                if len(decimal_part) > exponent:
-                    result = decimal_part[:exponent + 1] + '.' + decimal_part[exponent + 1:]
-                else:
-                    result = decimal_part + '0' * (exponent - len(decimal_part) + 1)
+        Args:
+            value (float): The float value to convert.
+
+        Returns:
+            str: The decimal string representation of the float.
+
+        Raises:
+            ValueError: If the input value is not a number.
+        """
+        value = float(value)
+
+        # Without the two next LOC this function returns "0." for the value parameter equals zero.
+        #
+        if value == 0:
+            return "0"
+
+        # Convert the float to scientific notation string
+        # Using .14e ensures that the result is not contaminated
+        # by the conversion from binary to decimal
+        #
+        scientific_str = f"{value:.14e}"
+        decimal_part, exponent_part = scientific_str.split('e')
+        decimal_part = decimal_part.replace('.', '').rstrip('0')
+        exponent = int(exponent_part)
+
+        # Adjust the decimal point based on the exponent
+        #
+        if exponent > 0:
+            if len(decimal_part) > exponent:
+                result = decimal_part[:exponent + 1] + '.' + decimal_part[exponent + 1:]
             else:
-                result = '0.' + '0' * (-exponent - 1) + decimal_part
+                result = decimal_part + '0' * (exponent - len(decimal_part) + 1)
+        else:
+            result = '0.' + '0' * (-exponent - 1) + decimal_part
+
         return result
