@@ -259,9 +259,10 @@ class PreciseRounding:
             #
             assert self._uncertainty == 0
 
-            self._value_rounded_str = str(self._value)
+            self._value_rounded_str = self._float_to_decimal_string(self._value)
             self._uncertainty_rounded_str = "0"
             if "." in self._value_rounded_str:
+                # Actually it may be unnecessary, because _float_to_decimal_string do the stripping too.
                 self._value_rounded_str = (self._value_rounded_str.
                                            rstrip("0").rstrip("."))
             if "." in self._value_rounded_str:
@@ -306,3 +307,25 @@ class PreciseRounding:
             significand = value / exponent
 
         return significand, characteristic, exponent
+
+    @staticmethod
+    def _float_to_decimal_string(value):
+        try:
+            value = float(value)
+        except:
+            raise ValueError("value must be a number")
+
+        result = "0"
+        if value != 0.0:
+            result = f"{value:.14e}"
+            part1, part2 = result.split('e')
+            decimal_part = part1.replace('.', '').rstrip('0')
+            exponent = int(part2)
+            if exponent > 0:
+                if len(decimal_part) > exponent:
+                    result = decimal_part[:exponent + 1] + '.' + decimal_part[exponent + 1:]
+                else:
+                    result = decimal_part + '0' * (exponent - len(decimal_part) + 1)
+            else:
+                result = '0.' + '0' * (-exponent - 1) + decimal_part
+        return result
