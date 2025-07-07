@@ -50,7 +50,7 @@ class TestPreciseRounding(unittest.TestCase):
 
     def test_relative_uncertainty(self):
         pr = PreciseRounding(123.45678, 0.0215)
-        self.assertEqual("0.017%", pr.relative_uncertainty)
+        self.assertAlmostEqual(pr.relative_uncertainty, 0.000174, places=6)
 
 
 if __name__ == '__main__':

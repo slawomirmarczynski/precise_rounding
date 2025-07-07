@@ -137,7 +137,7 @@ class PreciseRounding:
 
     def is_exact(self):
         """
-        Checks if the uncertainty is zero.
+        Checks if the uncertainty is exactly zero.
 
         Returns:
             bool: True if the uncertainty is zero, False otherwise.
@@ -157,22 +157,11 @@ class PreciseRounding:
         elif self._value == 0:
             relative_str = 'inf'
         else:
-            relative = abs(self._uncertainty) / abs(self._value) * 100.0
-            significand, characteristic, exponent = self._decompose(relative)
-            factor = 10**(digits - 1)
-            significand = int(factor * significand) / factor  # we are sure that significand >= 0
-            relative = significand * exponent
-            if relative >= 10**digits:
-                relative_str = int(relative)
-            else:
-                relative_str = f"{relative:.{digits - 1 - characteristic}f}%"
-        return relative_str
+            relative = abs(self._uncertainty) / abs(self._value)
+            # TODO: rounding to 2 significant digits
+        return relative
 
-    def _compute(self):
-        """
-        Rounds a measurement value and its uncertainty to a specified
-        number of significant digits.
-        """
+    def _check(self):
         # Ensure the inputs can be converted to numbers
         #
         try:
@@ -202,6 +191,14 @@ class PreciseRounding:
         if self._uncertainty != self._uncertainty:  # is NaN
             raise ValueError("uncertainty is not-a-number (NaN)")
 
+    def _compute(self):
+        """
+        Rounds a measurement value and its uncertainty to a specified
+        number of significant digits.
+        """
+
+        self.check()
+
         if self._uncertainty != 0:            
             # Repeat the calculations thrice to handle rounding edge cases
             #
@@ -214,6 +211,7 @@ class PreciseRounding:
                 threshold = 0.1 * exponential / factor
 
                 # Round uncertainty up and down
+                #
                 uncertainty_rounded_up = (
                     exponential * ceil(significand * factor) / factor)
                 uncertainty_rounded_down = (
@@ -262,7 +260,8 @@ class PreciseRounding:
             self._value_rounded_str = self._float_to_decimal_string(self._value)
             self._uncertainty_rounded_str = "0"
             if "." in self._value_rounded_str:
-                # Actually it may be unnecessary, because _float_to_decimal_string do the stripping too.
+                # Actually it may be unnecessary, because
+                # _float_to_decimal_string do the stripping too.
                 self._value_rounded_str = (self._value_rounded_str.
                                            rstrip("0").rstrip("."))
             if "." in self._value_rounded_str:
