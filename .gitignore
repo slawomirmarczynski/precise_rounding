@@ -18,3 +18,7 @@ Thumbs.db
 
 *.env
 /make_dist.bat
+/misc/
+/dist/
+/.vscode/
+/precise_rounding/precise_rounding.egg-info/

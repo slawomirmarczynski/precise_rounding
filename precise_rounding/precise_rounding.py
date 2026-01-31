@@ -1,4 +1,5 @@
 from math import ceil, fabs, floor
+from unittest.mock import DEFAULT
 
 
 def precise_rounding(value, uncertainty, uncertainty_digits='auto'):
@@ -35,9 +36,15 @@ def precise_rounding(value, uncertainty, uncertainty_digits='auto'):
         >>> precise_rounding(123.4545, 0, 2)
         ('123.4545', '0.0000')
     """
+
+    # Obiektowa wersja zawsze tworzy obiekt z danymi (tj. z mierzoną wartością
+    # i oszacowaną niepewnością pomiarową) jakie one są, ale bez ustawiania
+    # sposobu w jaki mają one być prezentowane. Dlaczego? Założenie jest aby
+    # prezentacja była zawsze w sposób domyślny, chyba że użytkownik jawnie
+    # i świadomie ustawi inny sposób.
+    #
     measurement = PreciseRounding(value, uncertainty)
-    if uncertainty_digits != 'auto':
-        measurement.uncertainty_digits = uncertainty_digits
+    measurement.uncertainty_digits = uncertainty_digits
     return measurement.value, measurement.uncertainty
 
 
@@ -59,6 +66,8 @@ class PreciseRounding:
             string.
     """
 
+    _PROVISIONAL_UNCERTAINTY_DIGITS = 2
+
     def __init__(self, value, uncertainty):
         """
         Initializes the PreciseRounding class with the given value and
@@ -70,11 +79,11 @@ class PreciseRounding:
         """
         self._value = value
         self._uncertainty = uncertainty
-        self._uncertainty_digits = 2  # provisional
+        self._uncertainty_digits = self._PROVISIONAL_UNCERTAINTY_DIGITS
         self._auto_uncertainty_digits = True
         self._value_rounded_str = None
         self._uncertainty_rounded_str = None
-        self._compute()
+        self._compute()  # @todo: lazy
 
     def __str__(self):
         """
@@ -109,7 +118,7 @@ class PreciseRounding:
         """
         if uncertainty_digits == 'auto':
             self._auto_uncertainty_digits = True
-            self._uncertainty_digits = 2
+            self._uncertainty_digits = self._PROVISIONAL_UNCERTAINTY_DIGITS
         else:
             self._auto_uncertainty_digits = False
             self._uncertainty_digits = uncertainty_digits
@@ -197,7 +206,7 @@ class PreciseRounding:
         number of significant digits.
         """
 
-        self.check()
+        self._check()
 
         if self._uncertainty != 0:            
             # Repeat the calculations thrice to handle rounding edge cases
@@ -310,7 +319,7 @@ class PreciseRounding:
     @staticmethod
     def _float_to_decimal_string(value):
         """
-        Converts a float to a decimal string without using exponential notation.
+        Converts a float to a string without using exponential notation.
 
         Args:
             value (float): The float value to convert.
@@ -323,7 +332,8 @@ class PreciseRounding:
         """
         value = float(value)
 
-        # Without the two next LOC this function returns "0." for the value parameter equals zero.
+        # Without the two next LOC this function returns "0." for the value
+        # parameter equals zero.
         #
         if value == 0:
             return "0"
